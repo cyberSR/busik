@@ -1,0 +1,1163 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Перевозки — Менеджер</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        tg: {
+          bg: '#17212b',
+          card: '#1e2c3a',
+          card2: '#242f3d',
+          accent: '#3d9be9',
+          accent2: '#2b7fd4',
+          text: '#e8f4fd',
+          muted: '#8b9eb0',
+          border: '#2a3f52',
+          green: '#4caf7d',
+          orange: '#e8a53a',
+          red: '#e85555',
+          purple: '#9b72e8',
+        }
+      },
+      fontFamily: {
+        sans: ['Inter', 'system-ui', 'sans-serif']
+      }
+    }
+  }
+}
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
+  body { background: #17212b; color: #e8f4fd; font-family: 'Inter', sans-serif; margin: 0; overflow: hidden; }
+  .screen { position: absolute; inset: 0; background: #17212b; overflow-y: auto; overflow-x: hidden; display: none; flex-direction: column; }
+  .screen.active { display: flex; }
+  .slide-in { animation: slideIn 0.22s ease-out; }
+  .slide-back { animation: slideBack 0.22s ease-out; }
+  @keyframes slideIn { from { transform: translateX(100%); opacity: 0.6; } to { transform: translateX(0); opacity: 1; } }
+  @keyframes slideBack { from { transform: translateX(-30%); opacity: 0.6; } to { transform: translateX(0); opacity: 1; } }
+  .tab-bar { flex-shrink: 0; }
+  .badge { font-size: 10px; min-width: 18px; height: 18px; padding: 0 5px; }
+  ::-webkit-scrollbar { width: 0; }
+  .btn-primary { background: #3d9be9; color: white; border-radius: 12px; padding: 14px; font-weight: 600; font-size: 15px; cursor: pointer; transition: background 0.15s; border: none; width: 100%; }
+  .btn-primary:active { background: #2b7fd4; }
+  .btn-ghost { background: transparent; border: 1.5px solid #2a3f52; color: #e8f4fd; border-radius: 12px; padding: 14px; font-weight: 600; font-size: 15px; cursor: pointer; width: 100%; }
+  .card { background: #1e2c3a; border-radius: 14px; }
+  .card2 { background: #242f3d; border-radius: 12px; }
+  .chip { border-radius: 8px; padding: 3px 10px; font-size: 12px; font-weight: 600; }
+  .chip-orange { background: rgba(232,165,58,0.15); color: #e8a53a; }
+  .chip-green { background: rgba(76,175,125,0.15); color: #4caf7d; }
+  .chip-blue { background: rgba(61,155,233,0.15); color: #3d9be9; }
+  .chip-red { background: rgba(232,85,85,0.15); color: #e85555; }
+  .chip-purple { background: rgba(155,114,232,0.15); color: #9b72e8; }
+  .input-field { background: #242f3d; border: 1.5px solid #2a3f52; border-radius: 12px; padding: 12px 16px; color: #e8f4fd; font-size: 15px; width: 100%; outline: none; transition: border-color 0.15s; }
+  .input-field:focus { border-color: #3d9be9; }
+  .input-field::placeholder { color: #8b9eb0; }
+  .divider { height: 1px; background: #2a3f52; }
+  .back-btn { width: 36px; height: 36px; background: #242f3d; border-radius: 10px; display: flex; align-items: center; justify-content: center; cursor: pointer; border: none; flex-shrink: 0; }
+  .avatar { width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 16px; flex-shrink: 0; }
+  .route-arrow { color: #3d9be9; margin: 0 4px; }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .progress-bar { height: 4px; background: #2a3f52; border-radius: 2px; overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 2px; transition: width 0.3s; }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════
+     SCREEN 1: Главный экран / Календарь
+═══════════════════════════════════════════════════ -->
+<div id="screen-main" class="screen active">
+  <!-- Header -->
+  <div class="px-4 pt-4 pb-2 flex-shrink-0">
+    <div class="flex items-center justify-between mb-4">
+      <div>
+        <p class="text-xs text-tg-muted uppercase tracking-wider font-medium">Менеджер перевозок</p>
+        <h1 class="text-xl font-bold mt-0.5">Июнь 2025</h1>
+      </div>
+      <div class="flex gap-2">
+        <button class="back-btn relative" onclick="showNotifications()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8b9eb0" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          <span class="absolute -top-1 -right-1 bg-tg-red text-white text-xs rounded-full w-4 h-4 flex items-center justify-center" style="font-size:9px">3</span>
+        </button>
+        <button class="back-btn">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8b9eb0" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Mini Calendar -->
+    <div class="card p-3 mb-3">
+      <div class="grid grid-cols-7 gap-1 text-center mb-2">
+        <div class="text-xs text-tg-muted font-medium">Пн</div>
+        <div class="text-xs text-tg-muted font-medium">Вт</div>
+        <div class="text-xs text-tg-muted font-medium">Ср</div>
+        <div class="text-xs text-tg-muted font-medium">Чт</div>
+        <div class="text-xs text-tg-muted font-medium">Пт</div>
+        <div class="text-xs text-tg-muted font-medium">Сб</div>
+        <div class="text-xs text-tg-muted font-medium">Вс</div>
+      </div>
+      <div class="grid grid-cols-7 gap-1 text-center" id="calendar-grid"></div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="flex gap-2 mb-3">
+      <button class="flex-1 py-2 rounded-xl text-sm font-semibold bg-tg-accent text-white" id="tab-orders" onclick="switchMainTab('orders')">
+        Заявки <span class="ml-1 bg-white/20 px-1.5 py-0.5 rounded-md text-xs">24</span>
+      </button>
+      <button class="flex-1 py-2 rounded-xl text-sm font-semibold bg-tg-card2 text-tg-muted" id="tab-trips" onclick="switchMainTab('trips')">
+        Рейсы <span class="ml-1 bg-tg-border px-1.5 py-0.5 rounded-md text-xs">8</span>
+      </button>
+      <button class="flex-1 py-2 rounded-xl text-sm font-semibold bg-tg-card2 text-tg-muted" id="tab-archive" onclick="switchMainTab('archive')">
+        Архив
+      </button>
+    </div>
+  </div>
+
+  <!-- Routes list -->
+  <div class="flex-1 px-4 pb-2 overflow-y-auto" id="main-content">
+    <div class="space-y-2" id="routes-list">
+      <div class="card p-4 cursor-pointer active:opacity-80" onclick="goTo('screen-routes-by-date')">
+        <div class="flex items-center justify-between">
+          <div class="flex-1">
+            <div class="flex items-center gap-1 font-semibold text-sm">
+              <span>Рудный</span><span class="route-arrow">→</span><span>Екатеринбург</span>
+            </div>
+            <p class="text-xs text-tg-muted mt-0.5">24 заявки · 10 июня</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="chip chip-orange">Сбор заявок</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8b9eb0" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+          </div>
+        </div>
+      </div>
+      <div class="card p-4 cursor-pointer active:opacity-80" onclick="goTo('screen-routes-by-date')">
+        <div class="flex items-center justify-between">
+          <div class="flex-1">
+            <div class="flex items-center gap-1 font-semibold text-sm">
+              <span>Екатеринбург</span><span class="route-arrow">→</span><span>Рудный</span>
+            </div>
+            <p class="text-xs text-tg-muted mt-0.5">18 заявок · 10 июня</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="chip chip-orange">Сбор заявок</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8b9eb0" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+          </div>
+        </div>
+      </div>
+      <div class="card p-4 cursor-pointer active:opacity-80">
+        <div class="flex items-center justify-between">
+          <div class="flex-1">
+            <div class="flex items-center gap-1 font-semibold text-sm">
+              <span>Рудный</span><span class="route-arrow">→</span><span>Челябинск (Аэропорт)</span>
+            </div>
+            <p class="text-xs text-tg-muted mt-0.5">7 заявок · 10 июня</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="chip chip-orange">Сбор заявок</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8b9eb0" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+          </div>
+        </div>
+      </div>
+      <div class="card p-4 cursor-pointer active:opacity-80">
+        <div class="flex items-center justify-between">
+          <div class="flex-1">
+            <div class="flex items-center gap-1 font-semibold text-sm">
+              <span>Челябинск (Вокзал)</span><span class="route-arrow">→</span><span>Рудный</span>
+            </div>
+            <p class="text-xs text-tg-muted mt-0.5">5 заявок · 10 июня</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="chip chip-orange">Сбор заявок</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8b9eb0" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FAB -->
+  <div class="px-4 pb-4 pt-2 flex-shrink-0">
+    <button class="btn-primary flex items-center justify-center gap-2" onclick="goTo('screen-new-order')">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Новая заявка
+    </button>
+  </div>
+
+  <!-- Tab Bar -->
+  <div class="tab-bar border-t border-tg-border bg-tg-card">
+    <div class="grid grid-cols-5 py-2">
+      <button class="flex flex-col items-center gap-0.5 py-1" onclick="">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="#3d9be9" stroke="#3d9be9" stroke-width="0"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+        <span class="text-tg-accent" style="font-size:10px;font-weight:600">Главная</span>
+      </button>
+      <button class="flex flex-col items-center gap-0.5 py-1" onclick="goTo('screen-orders-list')">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8b9eb0" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        <span class="text-tg-muted" style="font-size:10px">Заявки</span>
+      </button>
+      <button class="flex flex-col items-center gap-0.5 py-1" onclick="goTo('screen-trips-list')">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8b9eb0" stroke-width="1.8"><rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h4l3 4v3h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+        <span class="text-tg-muted" style="font-size:10px">Рейсы</span>
+      </button>
+      <button class="flex flex-col items-center gap-0.5 py-1">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8b9eb0" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span class="text-tg-muted" style="font-size:10px">Пассажиры</span>
+      </button>
+      <button class="flex flex-col items-center gap-0.5 py-1">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8b9eb0" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93l-1.41 1.41M4.93 4.93l1.41 1.41M4.93 19.07l1.41-1.41M19.07 19.07l-1.41-1.41M12 2v2M12 20v2M2 12h2M20 12h2"/></svg>
+        <span class="text-tg-muted" style="font-size:10px">Ещё</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     SCREEN 2: Список маршрутов на дату
+═══════════════════════════════════════════════════ -->
+<div id="screen-routes-by-date" class="screen">
+  <div class="flex-shrink-0 px-4 pt-4 pb-3">
+    <div class="flex items-center gap-3 mb-4">
+      <button class="back-btn" onclick="goBack()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e8f4fd" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <div>
+        <h2 class="font-bold text-lg">10 июня, вторник</h2>
+        <p class="text-xs text-tg-muted">5 маршрутов · 62 заявки</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="flex-1 overflow-y-auto px-4 space-y-3 pb-4">
+    <div class="card p-4 cursor-pointer active:opacity-80" onclick="goTo('screen-orders-list')">
+      <div class="flex items-center justify-between mb-2">
+        <div class="font-semibold">Рудный <span class="route-arrow">→</span> Екатеринбург</div>
+        <span class="chip chip-orange">Сбор заявок</span>
+      </div>
+      <div class="flex items-center justify-between text-sm text-tg-muted">
+        <span>Время в пути: ~10 ч</span>
+        <span class="text-tg-text font-semibold">от 8 500 ₸</span>
+      </div>
+      <div class="mt-2 flex items-center justify-between">
+        <span class="text-xs text-tg-muted">24 заявки</span>
+        <div class="progress-bar w-32"><div class="progress-fill bg-tg-orange" style="width:80%"></div></div>
+      </div>
+    </div>
+
+    <div class="card p-4 cursor-pointer active:opacity-80" onclick="goTo('screen-orders-list')">
+      <div class="flex items-center justify-between mb-2">
+        <div class="font-semibold">Екатеринбург <span class="route-arrow">→</span> Рудный</div>
+        <span class="chip chip-orange">Сбор заявок</span>
+      </div>
+      <div class="flex items-center justify-between text-sm text-tg-muted">
+        <span>Время в пути: ~10 ч</span>
+        <span class="text-tg-text font-semibold">от 8 500 ₸</span>
+      </div>
+      <div class="mt-2 flex items-center justify-between">
+        <span class="text-xs text-tg-muted">18 заявок</span>
+        <div class="progress-bar w-32"><div class="progress-fill bg-tg-orange" style="width:60%"></div></div>
+      </div>
+    </div>
+
+    <div class="card p-4 cursor-pointer active:opacity-80">
+      <div class="flex items-center justify-between mb-2">
+        <div class="font-semibold">Рудный <span class="route-arrow">→</span> Челябинск (Аэропорт)</div>
+        <span class="chip chip-orange">Сбор заявок</span>
+      </div>
+      <div class="flex items-center justify-between text-sm text-tg-muted">
+        <span>Время в пути: ~6 ч</span>
+        <span class="text-tg-text font-semibold">от 6 000 ₸</span>
+      </div>
+      <div class="mt-2 flex items-center justify-between">
+        <span class="text-xs text-tg-muted">7 заявок</span>
+        <div class="progress-bar w-32"><div class="progress-fill bg-tg-orange" style="width:35%"></div></div>
+      </div>
+    </div>
+
+    <div class="card p-4 cursor-pointer active:opacity-80">
+      <div class="flex items-center justify-between mb-2">
+        <div class="font-semibold">Рудный <span class="route-arrow">→</span> Челябинск (Вокзал)</div>
+        <span class="chip chip-orange">Сбор заявок</span>
+      </div>
+      <div class="flex items-center justify-between text-sm text-tg-muted">
+        <span>Время в пути: ~6 ч</span>
+        <span class="text-tg-text font-semibold">от 5 500 ₸</span>
+      </div>
+      <div class="mt-2 flex items-center justify-between">
+        <span class="text-xs text-tg-muted">6 заявок</span>
+        <div class="progress-bar w-32"><div class="progress-fill bg-tg-orange" style="width:25%"></div></div>
+      </div>
+    </div>
+
+    <div class="card p-4 cursor-pointer active:opacity-80">
+      <div class="flex items-center justify-between mb-2">
+        <div class="font-semibold">Челябинск (Аэропорт) <span class="route-arrow">→</span> Рудный</div>
+        <span class="chip chip-orange">Сбор заявок</span>
+      </div>
+      <div class="flex items-center justify-between text-sm text-tg-muted">
+        <span>Время в пути: ~6 ч</span>
+        <span class="text-tg-text font-semibold">от 6 000 ₸</span>
+      </div>
+      <div class="mt-2 flex items-center justify-between">
+        <span class="text-xs text-tg-muted">7 заявок</span>
+        <div class="progress-bar w-32"><div class="progress-fill bg-tg-orange" style="width:30%"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="px-4 pb-4 pt-2 flex-shrink-0">
+    <button class="btn-primary flex items-center justify-center gap-2" onclick="goTo('screen-new-order')">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Новая заявка
+    </button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     SCREEN 3: Создание заявки
+═══════════════════════════════════════════════════ -->
+<div id="screen-new-order" class="screen">
+  <div class="flex-shrink-0 px-4 pt-4 pb-3">
+    <div class="flex items-center gap-3 mb-1">
+      <button class="back-btn" onclick="goBack()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e8f4fd" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <h2 class="font-bold text-lg">Новая заявка</h2>
+    </div>
+  </div>
+
+  <div class="flex-1 overflow-y-auto px-4 pb-4 space-y-3">
+    <div class="card p-4 space-y-4">
+      <div>
+        <label class="text-xs text-tg-muted font-medium mb-1.5 block">Маршрут</label>
+        <div class="input-field flex items-center justify-between" style="cursor:pointer">
+          <span>Рудный → Екатеринбург</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8b9eb0" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+      </div>
+      <div>
+        <label class="text-xs text-tg-muted font-medium mb-1.5 block">Дата поездки</label>
+        <input type="date" class="input-field" value="2025-06-10">
+      </div>
+      <div class="divider"></div>
+      <div>
+        <label class="text-xs text-tg-muted font-medium mb-1.5 block">Откуда (посадка)</label>
+        <input type="text" class="input-field" placeholder="Адрес посадки" value="Рудный, Автовокзал">
+      </div>
+      <div>
+        <label class="text-xs text-tg-muted font-medium mb-1.5 block">Куда (высадка)</label>
+        <input type="text" class="input-field" placeholder="Адрес высадки" value="Екатеринбург, Вокзал">
+      </div>
+      <div class="divider"></div>
+      <div>
+        <label class="text-xs text-tg-muted font-medium mb-1.5 block">Пассажир</label>
+        <input type="text" class="input-field" placeholder="Имя пассажира" value="Иванов Иван">
+      </div>
+      <div>
+        <label class="text-xs text-tg-muted font-medium mb-1.5 block">Телефон</label>
+        <input type="tel" class="input-field" placeholder="+7 777 000 00 00" value="+7 777 123 45 67">
+      </div>
+      <div class="divider"></div>
+      <div>
+        <label class="text-xs text-tg-muted font-medium mb-1.5 block">Количество мест</label>
+        <div class="flex items-center gap-4">
+          <button class="w-10 h-10 bg-tg-card2 rounded-xl flex items-center justify-center font-bold text-xl" onclick="changeSeat(-1)">−</button>
+          <span class="text-xl font-bold flex-1 text-center" id="seat-count">1</span>
+          <button class="w-10 h-10 bg-tg-card2 rounded-xl flex items-center justify-center font-bold text-xl" onclick="changeSeat(1)">+</button>
+        </div>
+      </div>
+      <div>
+        <label class="text-xs text-tg-muted font-medium mb-1.5 block">Тариф</label>
+        <div class="flex items-center justify-between p-3 bg-tg-card2 rounded-xl">
+          <span class="text-tg-muted text-sm">Стандарт</span>
+          <span class="font-bold text-tg-accent">8 500 ₸</span>
+        </div>
+      </div>
+      <div>
+        <label class="text-xs text-tg-muted font-medium mb-1.5 block">Комментарий</label>
+        <textarea class="input-field" rows="2" placeholder="Комментарий (необязательно)"></textarea>
+      </div>
+    </div>
+  </div>
+
+  <div class="px-4 pb-4 pt-2 flex-shrink-0">
+    <button class="btn-primary" onclick="saveOrder()">Сохранить заявку</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     SCREEN 4: Список заявок по маршруту
+═══════════════════════════════════════════════════ -->
+<div id="screen-orders-list" class="screen">
+  <div class="flex-shrink-0 px-4 pt-4 pb-3">
+    <div class="flex items-center gap-3 mb-3">
+      <button class="back-btn" onclick="goBack()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e8f4fd" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <div>
+        <h2 class="font-bold text-base">Рудный → Екатеринбург</h2>
+        <p class="text-xs text-tg-muted">10 июня, вторник</p>
+      </div>
+    </div>
+    <!-- Filter tabs -->
+    <div class="flex gap-2 overflow-x-auto pb-1">
+      <button class="flex-shrink-0 px-3 py-1.5 rounded-lg text-sm font-semibold bg-tg-accent text-white">Все 24</button>
+      <button class="flex-shrink-0 px-3 py-1.5 rounded-lg text-sm font-semibold bg-tg-card2 text-tg-muted">Новые 12</button>
+      <button class="flex-shrink-0 px-3 py-1.5 rounded-lg text-sm font-semibold bg-tg-card2 text-tg-muted">Подтверждены 12</button>
+    </div>
+  </div>
+
+  <div class="flex-1 overflow-y-auto px-4 space-y-2 pb-4">
+    <!-- Order items -->
+    <div class="card p-3 cursor-pointer active:opacity-80" onclick="goTo('screen-order-detail')">
+      <div class="flex items-center gap-3">
+        <div class="avatar bg-blue-500/20 text-blue-400">ИИ</div>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center justify-between">
+            <span class="font-semibold text-sm">Иванов Иван</span>
+            <span class="chip chip-blue">Новая</span>
+          </div>
+          <div class="flex items-center justify-between mt-0.5">
+            <span class="text-xs text-tg-muted">+7 777 123 45 67 · 1 место</span>
+            <span class="text-sm font-bold text-tg-accent">8 500 ₸</span>
+          </div>
+          <p class="text-xs text-tg-muted mt-0.5">12:30</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card p-3 cursor-pointer active:opacity-80" onclick="goTo('screen-order-detail')">
+      <div class="flex items-center gap-3">
+        <div class="avatar bg-purple-500/20 text-purple-400">ПО</div>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center justify-between">
+            <span class="font-semibold text-sm">Петрова Ольга</span>
+            <span class="chip chip-blue">Новая</span>
+          </div>
+          <div class="flex items-center justify-between mt-0.5">
+            <span class="text-xs text-tg-muted">+7 702 987 65 43 · 1 место</span>
+            <span class="text-sm font-bold text-tg-accent">8 500 ₸</span>
+          </div>
+          <p class="text-xs text-tg-muted mt-0.5">12:07</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card p-3 cursor-pointer active:opacity-80" onclick="goTo('screen-order-detail')">
+      <div class="flex items-center gap-3">
+        <div class="avatar bg-green-500/20 text-green-400">СА</div>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center justify-between">
+            <span class="font-semibold text-sm">Сидоров Алексей</span>
+            <span class="chip chip-blue">Новая</span>
+          </div>
+          <div class="flex items-center justify-between mt-0.5">
+            <span class="text-xs text-tg-muted">+7 777 555 44 33 · 2 места</span>
+            <span class="text-sm font-bold text-tg-accent">17 000 ₸</span>
+          </div>
+          <p class="text-xs text-tg-muted mt-0.5">13:45</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card p-3 cursor-pointer active:opacity-80" onclick="goTo('screen-order-detail')">
+      <div class="flex items-center gap-3">
+        <div class="avatar bg-orange-500/20 text-orange-400">КС</div>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center justify-between">
+            <span class="font-semibold text-sm">Ким Стас</span>
+            <span class="chip chip-green">Подтверждена</span>
+          </div>
+          <div class="flex items-center justify-between mt-0.5">
+            <span class="text-xs text-tg-muted">+7 777 111 22 33 · 1 место</span>
+            <span class="text-sm font-bold text-tg-accent">8 500 ₸</span>
+          </div>
+          <p class="text-xs text-tg-muted mt-0.5">13:20</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card p-3 cursor-pointer active:opacity-80" onclick="goTo('screen-order-detail')">
+      <div class="flex items-center gap-3">
+        <div class="avatar bg-red-500/20 text-red-400">ВА</div>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center justify-between">
+            <span class="font-semibold text-sm">Ванин Алексей</span>
+            <span class="chip chip-green">Подтверждена</span>
+          </div>
+          <div class="flex items-center justify-between mt-0.5">
+            <span class="text-xs text-tg-muted">+7 701 222 33 44 · 1 место</span>
+            <span class="text-sm font-bold text-tg-accent">8 500 ₸</span>
+          </div>
+          <p class="text-xs text-tg-muted mt-0.5">13:20</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card p-3 cursor-pointer active:opacity-80">
+      <div class="flex items-center gap-3">
+        <div class="avatar bg-teal-500/20 text-teal-400">НМ</div>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center justify-between">
+            <span class="font-semibold text-sm">Назаров Марат</span>
+            <span class="chip chip-green">Подтверждена</span>
+          </div>
+          <div class="flex items-center justify-between mt-0.5">
+            <span class="text-xs text-tg-muted">+7 705 321 99 88 · 1 место</span>
+            <span class="text-sm font-bold text-tg-accent">8 500 ₸</span>
+          </div>
+          <p class="text-xs text-tg-muted mt-0.5">11:50</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="px-4 pb-4 pt-2 flex-shrink-0">
+    <button class="btn-primary flex items-center justify-center gap-2" onclick="goTo('screen-new-order')">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Новая заявка
+    </button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     SCREEN 5: Детали заявки
+═══════════════════════════════════════════════════ -->
+<div id="screen-order-detail" class="screen">
+  <div class="flex-shrink-0 px-4 pt-4 pb-3">
+    <div class="flex items-center gap-3">
+      <button class="back-btn" onclick="goBack()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e8f4fd" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <h2 class="font-bold text-lg">Заявка #24</h2>
+      <div class="ml-auto"><span class="chip chip-blue">Новая</span></div>
+    </div>
+  </div>
+
+  <div class="flex-1 overflow-y-auto px-4 pb-4">
+    <div class="card p-4 space-y-3">
+      <div class="flex items-center justify-between py-1">
+        <span class="text-tg-muted text-sm">Маршрут</span>
+        <span class="font-semibold text-sm text-right">Рудный → Екатеринбург</span>
+      </div>
+      <div class="divider"></div>
+      <div class="flex items-center justify-between py-1">
+        <span class="text-tg-muted text-sm">Дата поездки</span>
+        <span class="font-semibold text-sm">10.06.2025</span>
+      </div>
+      <div class="divider"></div>
+      <div class="flex items-center justify-between py-1">
+        <span class="text-tg-muted text-sm">Пассажир</span>
+        <span class="font-semibold text-sm">Иванов Иван</span>
+      </div>
+      <div class="divider"></div>
+      <div class="flex items-center justify-between py-1">
+        <span class="text-tg-muted text-sm">Телефон</span>
+        <div class="flex items-center gap-2">
+          <span class="font-semibold text-sm text-tg-accent">+7 777 123 45 67</span>
+          <button class="w-7 h-7 bg-tg-card2 rounded-lg flex items-center justify-center">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4caf7d" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13.5 19.79 19.79 0 0 1 1.6 4.9 2 2 0 0 1 3.58 2.72h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 10.1a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div class="flex items-center justify-between py-1">
+        <span class="text-tg-muted text-sm">Посадка</span>
+        <div class="flex items-center gap-2">
+          <span class="font-semibold text-sm text-right max-w-36">Рудный, Автовокзал</span>
+          <button class="w-7 h-7 bg-tg-card2 rounded-lg flex items-center justify-center">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3d9be9" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div class="flex items-center justify-between py-1">
+        <span class="text-tg-muted text-sm">Высадка</span>
+        <div class="flex items-center gap-2">
+          <span class="font-semibold text-sm text-right max-w-36">Екатеринбург, Вокзал</span>
+          <button class="w-7 h-7 bg-tg-card2 rounded-lg flex items-center justify-center">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3d9be9" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div class="flex items-center justify-between py-1">
+        <span class="text-tg-muted text-sm">Кол-во мест</span>
+        <span class="font-semibold text-sm">1</span>
+      </div>
+      <div class="divider"></div>
+      <div class="flex items-center justify-between py-1">
+        <span class="text-tg-muted text-sm">Тариф</span>
+        <span class="font-bold text-tg-accent">8 500 ₸</span>
+      </div>
+      <div class="divider"></div>
+      <div class="flex items-center justify-between py-1">
+        <span class="text-tg-muted text-sm">Комментарий</span>
+        <span class="text-tg-muted text-sm">—</span>
+      </div>
+    </div>
+
+    <!-- Status change -->
+    <div class="mt-3 card p-4">
+      <p class="text-xs text-tg-muted font-medium mb-2">Статус заявки</p>
+      <div class="grid grid-cols-2 gap-2">
+        <button class="py-2 rounded-xl text-sm font-semibold bg-tg-accent text-white">✓ Подтвердить</button>
+        <button class="py-2 rounded-xl text-sm font-semibold bg-red-500/15 text-red-400">✗ Отменить</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="px-4 pb-4 pt-2 flex-shrink-0 flex gap-3">
+    <button class="btn-ghost flex-1" onclick="goTo('screen-new-order')">Редактировать</button>
+    <button class="flex-1 py-3 rounded-xl font-semibold text-sm bg-red-500/15 text-red-400">Удалить</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     SCREEN 6: Формирование рейсов
+═══════════════════════════════════════════════════ -->
+<div id="screen-form-trips" class="screen">
+  <div class="flex-shrink-0 px-4 pt-4 pb-3">
+    <div class="flex items-center gap-3 mb-1">
+      <button class="back-btn" onclick="goBack()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e8f4fd" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <div>
+        <h2 class="font-bold text-base">Рудный → Екатеринбург</h2>
+        <p class="text-xs text-tg-muted">10 июня, вторник</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="flex-1 overflow-y-auto px-4 pb-4 space-y-3">
+    <!-- Status banner -->
+    <div class="rounded-xl p-4" style="background: linear-gradient(135deg, #3d2f9e22, #3d9be922)">
+      <div class="flex items-center gap-2 mb-1">
+        <div class="status-dot bg-tg-orange"></div>
+        <span class="text-tg-orange font-semibold text-sm">Этап: Формирование рейсов</span>
+      </div>
+      <p class="text-tg-muted text-xs mb-3">Собрано 24 заявки · Необходимо сформировать рейсы</p>
+      <button class="btn-primary py-3" onclick="goTo('screen-trips-list')">Сформировать рейсы</button>
+    </div>
+
+    <!-- Predicted trips -->
+    <p class="text-xs text-tg-muted font-semibold uppercase tracking-wider">Предполагаемые рейсы</p>
+    <div class="card p-4">
+      <div class="flex items-center justify-between mb-2">
+        <div>
+          <p class="font-semibold text-sm">Авто 1 (Гранд Старекс)</p>
+          <p class="text-xs text-tg-muted">8 мест</p>
+        </div>
+        <span class="chip chip-red text-sm font-bold">12/8</span>
+      </div>
+      <div class="progress-bar"><div class="progress-fill bg-tg-red" style="width:100%"></div></div>
+      <p class="text-xs text-tg-muted mt-1.5">Перегрузка: 4 пассажира</p>
+    </div>
+
+    <div class="card p-4">
+      <div class="flex items-center justify-between mb-2">
+        <div>
+          <p class="font-semibold text-sm">Авто 2 (Хёндай Н-1)</p>
+          <p class="text-xs text-tg-muted">8 мест</p>
+        </div>
+        <span class="chip chip-green text-sm font-bold">8/8</span>
+      </div>
+      <div class="progress-bar"><div class="progress-fill bg-tg-green" style="width:100%"></div></div>
+    </div>
+
+    <div class="card p-4">
+      <div class="flex items-center justify-between mb-2">
+        <div>
+          <p class="font-semibold text-sm">Авто 3 (Газель)</p>
+          <p class="text-xs text-tg-muted">14 мест</p>
+        </div>
+        <span class="chip chip-orange text-sm font-bold">4/14</span>
+      </div>
+      <div class="progress-bar"><div class="progress-fill bg-tg-orange" style="width:30%"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     SCREEN 7: Список рейсов
+═══════════════════════════════════════════════════ -->
+<div id="screen-trips-list" class="screen">
+  <div class="flex-shrink-0 px-4 pt-4 pb-3">
+    <div class="flex items-center gap-3 mb-3">
+      <button class="back-btn" onclick="goBack()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e8f4fd" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <h2 class="font-bold text-lg">Рейсы на 10 июня</h2>
+    </div>
+    <div class="flex gap-2">
+      <button class="flex-shrink-0 px-3 py-1.5 rounded-lg text-sm font-semibold bg-tg-accent text-white">Все 3</button>
+      <button class="flex-shrink-0 px-3 py-1.5 rounded-lg text-sm font-semibold bg-tg-card2 text-tg-muted">Готовые 1</button>
+      <button class="flex-shrink-0 px-3 py-1.5 rounded-lg text-sm font-semibold bg-tg-card2 text-tg-muted">В работе 2</button>
+    </div>
+  </div>
+
+  <div class="flex-1 overflow-y-auto px-4 space-y-3 pb-4">
+    <div class="card p-4 cursor-pointer active:opacity-80" onclick="goTo('screen-seat-map')">
+      <div class="flex items-center justify-between mb-2">
+        <div>
+          <p class="font-bold">Рейс #1</p>
+          <p class="text-xs text-tg-muted">Рудный → Екатеринбург · 08:00</p>
+        </div>
+        <span class="chip chip-green">Готов 🚌</span>
+      </div>
+      <div class="flex items-center justify-between">
+        <div class="text-sm">
+          <span class="text-tg-muted">Мест: </span>
+          <span class="font-semibold">8/8</span>
+        </div>
+        <div class="progress-bar w-32"><div class="progress-fill bg-tg-green" style="width:100%"></div></div>
+      </div>
+    </div>
+
+    <div class="card p-4 cursor-pointer active:opacity-80" onclick="goTo('screen-seat-map')">
+      <div class="flex items-center justify-between mb-2">
+        <div>
+          <p class="font-bold">Рейс #2</p>
+          <p class="text-xs text-tg-muted">Рудный → Екатеринбург · 12:00</p>
+        </div>
+        <span class="chip chip-orange">В рассадке</span>
+      </div>
+      <div class="flex items-center justify-between">
+        <div class="text-sm">
+          <span class="text-tg-muted">Мест: </span>
+          <span class="font-semibold">8/8</span>
+        </div>
+        <div class="progress-bar w-32"><div class="progress-fill bg-tg-orange" style="width:100%"></div></div>
+      </div>
+    </div>
+
+    <div class="card p-4 cursor-pointer active:opacity-80" onclick="goTo('screen-seat-map')">
+      <div class="flex items-center justify-between mb-2">
+        <div>
+          <p class="font-bold">Рейс #3</p>
+          <p class="text-xs text-tg-muted">Рудный → Екатеринбург · 16:00</p>
+        </div>
+        <span class="chip chip-orange">В рассадке</span>
+      </div>
+      <div class="flex items-center justify-between">
+        <div class="text-sm">
+          <span class="text-tg-muted">Мест: </span>
+          <span class="font-semibold">4/14</span>
+        </div>
+        <div class="progress-bar w-32"><div class="progress-fill bg-tg-orange" style="width:30%"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="px-4 pb-4 pt-2 flex-shrink-0">
+    <button class="btn-primary flex items-center justify-center gap-2">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Новый рейс
+    </button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     SCREEN 8: Рассадка пассажиров
+═══════════════════════════════════════════════════ -->
+<div id="screen-seat-map" class="screen">
+  <div class="flex-shrink-0 px-4 pt-4 pb-3">
+    <div class="flex items-center gap-3 mb-1">
+      <button class="back-btn" onclick="goBack()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e8f4fd" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <div>
+        <h2 class="font-bold text-base">Рейс #1 (08:00)</h2>
+        <p class="text-xs text-tg-muted">Рудный → Екатеринбург</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="flex-1 overflow-y-auto px-4 pb-4 space-y-3">
+    <!-- Car info -->
+    <div class="card p-4">
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <p class="text-xs text-tg-muted mb-0.5">Авто</p>
+          <p class="font-semibold text-sm">Гранд Старекс</p>
+        </div>
+        <div>
+          <p class="text-xs text-tg-muted mb-0.5">Гос. номер</p>
+          <p class="font-semibold text-sm font-mono">123ABC10</p>
+        </div>
+        <div>
+          <p class="text-xs text-tg-muted mb-0.5">Водитель</p>
+          <p class="font-semibold text-sm">Иванов С.</p>
+        </div>
+        <div>
+          <p class="text-xs text-tg-muted mb-0.5">Телефон</p>
+          <p class="font-semibold text-sm text-tg-accent">+7 777 999 88 77</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Seat stats -->
+    <div class="card p-4">
+      <div class="flex items-center justify-between mb-2">
+        <span class="font-semibold text-sm">Пассажиры (12/8 мест)</span>
+        <button class="px-3 py-1 bg-tg-accent rounded-lg text-xs font-semibold text-white">Рассадить</button>
+      </div>
+      <div class="progress-bar mb-3"><div class="progress-fill bg-tg-red" style="width:100%"></div></div>
+      <p class="text-xs text-tg-red font-semibold">⚠ Превышение: 4 пассажира</p>
+    </div>
+
+    <!-- Passengers list -->
+    <div class="space-y-2">
+      <div class="card2 p-3 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 bg-tg-accent/20 rounded-lg flex items-center justify-center text-tg-accent font-bold text-sm">1</div>
+          <div>
+            <p class="font-semibold text-sm">Иванов Иван</p>
+            <p class="text-xs text-tg-muted">+7 777 123 45 67</p>
+          </div>
+        </div>
+        <button class="w-8 h-8 bg-tg-card rounded-lg flex items-center justify-center">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8b9eb0" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+        </button>
+      </div>
+
+      <div class="card2 p-3 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 bg-tg-accent/20 rounded-lg flex items-center justify-center text-tg-accent font-bold text-sm">2</div>
+          <div>
+            <p class="font-semibold text-sm">Петрова Ольга</p>
+            <p class="text-xs text-tg-muted">+7 702 987 65 43</p>
+          </div>
+        </div>
+        <button class="w-8 h-8 bg-tg-card rounded-lg flex items-center justify-center">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8b9eb0" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+        </button>
+      </div>
+
+      <div class="card2 p-3 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 bg-tg-accent/20 rounded-lg flex items-center justify-center text-tg-accent font-bold text-sm">3</div>
+          <div>
+            <p class="font-semibold text-sm">Сидоров Алексей</p>
+            <p class="text-xs text-tg-muted">+7 777 555 44 33</p>
+          </div>
+        </div>
+        <button class="w-8 h-8 bg-tg-card rounded-lg flex items-center justify-center">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8b9eb0" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+        </button>
+      </div>
+
+      <div class="card2 p-3 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 bg-tg-accent/20 rounded-lg flex items-center justify-center text-tg-accent font-bold text-sm">4</div>
+          <div>
+            <p class="font-semibold text-sm">Ким Стас</p>
+            <p class="text-xs text-tg-muted">+7 777 111 22 33</p>
+          </div>
+        </div>
+        <button class="w-8 h-8 bg-tg-card rounded-lg flex items-center justify-center">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8b9eb0" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     SCREEN 9: Карточка рейса (Готов к отправке)
+═══════════════════════════════════════════════════ -->
+<div id="screen-trip-card" class="screen">
+  <div class="flex-shrink-0 px-4 pt-4 pb-3">
+    <div class="flex items-center gap-3 mb-1">
+      <button class="back-btn" onclick="goBack()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e8f4fd" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <div>
+        <div class="flex items-center gap-2">
+          <h2 class="font-bold text-base">Рейс #1</h2>
+          <span class="chip chip-green">● Готов к отправке</span>
+        </div>
+        <p class="text-xs text-tg-muted">08:00</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="flex-1 overflow-y-auto px-4 pb-4 space-y-3">
+    <!-- Route card -->
+    <div class="card p-4">
+      <div class="flex items-center gap-3 mb-3">
+        <div class="w-10 h-10 bg-tg-accent/20 rounded-xl flex items-center justify-center">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3d9be9" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        </div>
+        <div>
+          <p class="font-bold">Рудный → Екатеринбург</p>
+          <p class="text-xs text-tg-muted">10 июня, вторник</p>
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div class="card2 p-3">
+          <p class="text-xs text-tg-muted mb-0.5">Авто</p>
+          <p class="font-semibold text-sm">Гранд Старекс</p>
+          <p class="text-xs text-tg-muted font-mono">123ABC10</p>
+        </div>
+        <div class="card2 p-3">
+          <p class="text-xs text-tg-muted mb-0.5">Водитель</p>
+          <p class="font-semibold text-sm">Иванов С.</p>
+          <p class="text-xs text-tg-accent">+7 777 999 88 77</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="card p-4">
+      <div class="grid grid-cols-3 gap-3 text-center">
+        <div>
+          <p class="text-2xl font-bold">8</p>
+          <p class="text-xs text-tg-muted">Мест</p>
+        </div>
+        <div>
+          <p class="text-2xl font-bold text-tg-green">8</p>
+          <p class="text-xs text-tg-muted">Занято</p>
+        </div>
+        <div>
+          <p class="text-2xl font-bold text-tg-muted">0</p>
+          <p class="text-xs text-tg-muted">Свободно</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Passengers -->
+    <div class="flex items-center justify-between">
+      <p class="font-semibold text-sm">Пассажиры</p>
+      <button class="text-tg-accent text-sm font-medium" onclick="goTo('screen-passengers-list')">Список →</button>
+    </div>
+  </div>
+
+  <div class="px-4 pb-4 pt-2 flex-shrink-0">
+    <button class="btn-primary" style="background: linear-gradient(135deg, #4caf7d, #2e8b5e);" onclick="showSentModal()">
+      🚌 Отправить рейс
+    </button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     SCREEN 10: Список пассажиров рейса
+═══════════════════════════════════════════════════ -->
+<div id="screen-passengers-list" class="screen">
+  <div class="flex-shrink-0 px-4 pt-4 pb-3">
+    <div class="flex items-center gap-3 mb-1">
+      <button class="back-btn" onclick="goBack()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e8f4fd" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <div>
+        <h2 class="font-bold text-base">Рейс #1 (08:00)</h2>
+        <p class="text-xs text-tg-muted">Рудный → Екатеринбург · 8 пассажиров</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="flex-1 overflow-y-auto px-4 pb-4 space-y-2">
+    <!-- Car header -->
+    <div class="card2 p-3 mb-2">
+      <p class="text-xs text-tg-muted">Авто: Гранд Старекс (123ABC10)</p>
+      <p class="text-xs text-tg-muted">Водитель: Иванов С.</p>
+    </div>
+
+    <div class="card p-3 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 bg-tg-accent/20 rounded-lg flex items-center justify-center text-tg-accent font-bold text-sm">1</div>
+        <div>
+          <p class="font-semibold text-sm">Иванов Иван</p>
+          <p class="text-xs text-tg-muted">+7 777 123 45 67</p>
+        </div>
+      </div>
+      <button class="w-8 h-8 bg-green-500/15 rounded-lg flex items-center justify-center">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4caf7d" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      </button>
+    </div>
+
+    <div class="card p-3 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 bg-tg-accent/20 rounded-lg flex items-center justify-center text-tg-accent font-bold text-sm">2</div>
+        <div>
+          <p class="font-semibold text-sm">Петрова Ольга</p>
+          <p class="text-xs text-tg-muted">+7 702 987 65 43</p>
+        </div>
+      </div>
+      <button class="w-8 h-8 bg-green-500/15 rounded-lg flex items-center justify-center">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4caf7d" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      </button>
+    </div>
+
+    <div class="card p-3 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 bg-tg-accent/20 rounded-lg flex items-center justify-center text-tg-accent font-bold text-sm">3</div>
+        <div>
+          <p class="font-semibold text-sm">Сидоров Алексей</p>
+          <p class="text-xs text-tg-muted">+7 777 555 44 33</p>
+        </div>
+      </div>
+      <button class="w-8 h-8 bg-green-500/15 rounded-lg flex items-center justify-center">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4caf7d" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      </button>
+    </div>
+
+    <div class="card p-3 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 bg-tg-accent/20 rounded-lg flex items-center justify-center text-tg-accent font-bold text-sm">4</div>
+        <div>
+          <p class="font-semibold text-sm">Ким Стас</p>
+          <p class="text-xs text-tg-muted">+7 777 111 22 33</p>
+        </div>
+      </div>
+      <button class="w-8 h-8 bg-green-500/15 rounded-lg flex items-center justify-center">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4caf7d" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      </button>
+    </div>
+
+    <div class="card p-3 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 bg-tg-accent/20 rounded-lg flex items-center justify-center text-tg-accent font-bold text-sm">5</div>
+        <div>
+          <p class="font-semibold text-sm">Ванин Алексей</p>
+          <p class="text-xs text-tg-muted">+7 701 222 33 44</p>
+        </div>
+      </div>
+      <button class="w-8 h-8 bg-green-500/15 rounded-lg flex items-center justify-center">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4caf7d" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      </button>
+    </div>
+
+    <div class="card p-3 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 bg-tg-accent/20 rounded-lg flex items-center justify-center text-tg-accent font-bold text-sm">6</div>
+        <div>
+          <p class="font-semibold text-sm">Назаров Марат</p>
+          <p class="text-xs text-tg-muted">+7 705 321 99 88</p>
+        </div>
+      </div>
+      <button class="w-8 h-8 bg-green-500/15 rounded-lg flex items-center justify-center">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4caf7d" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     MODALS
+═══════════════════════════════════════════════════ -->
+
+<!-- Toast -->
+<div id="toast" class="fixed bottom-24 left-4 right-4 bg-tg-green text-white rounded-xl p-4 font-semibold text-center z-50 hidden transition-all">
+  ✓ Заявка сохранена
+</div>
+
+<!-- Sent Modal -->
+<div id="sent-modal" class="fixed inset-0 z-50 hidden flex items-end">
+  <div class="absolute inset-0 bg-black/60" onclick="hideSentModal()"></div>
+  <div class="relative w-full bg-tg-card rounded-t-2xl p-6 text-center">
+    <div class="text-6xl mb-3">🚌</div>
+    <h3 class="text-xl font-bold mb-1">Рейс отправлен!</h3>
+    <p class="text-tg-muted text-sm mb-4">Рейс #1 · Рудный → Екатеринбург · 8 пассажиров уведомлены</p>
+    <button class="btn-primary" onclick="hideSentModal()">Отлично</button>
+  </div>
+</div>
+
+<script>
+// ─── Navigation Stack ───────────────────────────────
+let screenStack = ['screen-main'];
+
+function goTo(id) {
+  const current = screenStack[screenStack.length - 1];
+  if (current === id) return;
+  document.getElementById(current).classList.remove('active');
+  const next = document.getElementById(id);
+  next.classList.add('active', 'slide-in');
+  setTimeout(() => next.classList.remove('slide-in'), 250);
+  screenStack.push(id);
+  // scroll to top
+  next.scrollTop = 0;
+}
+
+function goBack() {
+  if (screenStack.length <= 1) return;
+  const current = screenStack.pop();
+  document.getElementById(current).classList.remove('active');
+  const prev = document.getElementById(screenStack[screenStack.length - 1]);
+  prev.classList.add('active', 'slide-back');
+  setTimeout(() => prev.classList.remove('slide-back'), 250);
+}
+
+// ─── Calendar ───────────────────────────────────────
+function buildCalendar() {
+  const grid = document.getElementById('calendar-grid');
+  const days = [9,10,11,12,13,14,15];
+  const hasDot = [false,true,true,true,false,true,false];
+  days.forEach((d, i) => {
+    const cell = document.createElement('div');
+    cell.className = 'relative';
+    const isToday = d === 10;
+    cell.innerHTML = `
+      <div class="mx-auto w-8 h-8 flex items-center justify-center rounded-full text-sm font-${isToday ? 'bold' : 'medium'} cursor-pointer ${isToday ? 'bg-tg-accent text-white' : 'text-tg-text hover:bg-tg-card2'}" onclick="selectDay(${d})">
+        ${d}
+      </div>
+      ${hasDot[i] ? `<div class="absolute bottom-0 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full ${isToday ? 'bg-white' : 'bg-tg-accent'}"></div>` : ''}
+    `;
+    grid.appendChild(cell);
+  });
+}
+
+function selectDay(d) {
+  goTo('screen-routes-by-date');
+}
+
+// ─── Seat counter ────────────────────────────────────
+let seats = 1;
+function changeSeat(delta) {
+  seats = Math.max(1, Math.min(8, seats + delta));
+  document.getElementById('seat-count').textContent = seats;
+}
+
+// ─── Tabs ────────────────────────────────────────────
+function switchMainTab(tab) {
+  ['orders','trips','archive'].forEach(t => {
+    document.getElementById(`tab-${t}`).className = `flex-1 py-2 rounded-xl text-sm font-semibold ${t === tab ? 'bg-tg-accent text-white' : 'bg-tg-card2 text-tg-muted'}`;
+  });
+}
+
+// ─── Actions ─────────────────────────────────────────
+function saveOrder() {
+  const toast = document.getElementById('toast');
+  toast.classList.remove('hidden');
+  setTimeout(() => {
+    toast.classList.add('hidden');
+    goBack();
+  }, 1800);
+}
+
+function showSentModal() {
+  document.getElementById('sent-modal').classList.remove('hidden');
+  document.getElementById('sent-modal').style.display = 'flex';
+}
+
+function hideSentModal() {
+  document.getElementById('sent-modal').style.display = 'none';
+  document.getElementById('sent-modal').classList.add('hidden');
+  goBack();
+}
+
+function showNotifications() {
+  alert('🔔 Уведомления:\n• 3 новые заявки на маршрут Рудный → Екб\n• Рейс #1 готов к отправке\n• Ванин А. изменил дату заявки');
+}
+
+// ─── Init ─────────────────────────────────────────────
+buildCalendar();
+</script>
+</body>
+</html>
